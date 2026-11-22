@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/direction_names.dart';
 import '../domain/pics.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,6 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final decoder = PicsDecoder();
   Map<String, String> names = {};
+  DirectionNames? directions;
   StreamSubscription<dynamic>? subscription;
   Timer? timer;
   String? error;
@@ -25,6 +27,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     rootBundle.loadString('zenkoku-kousaten.csv').then((csv) {
       if (mounted) setState(() => names = intersectionNames(csv));
+    });
+    DirectionNames.load().then((loaded) {
+      if (mounted) setState(() => directions = loaded);
     });
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (subscription != null) setState(() {});
@@ -163,14 +168,63 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             if (!freshSignals)
               const Text('受信待ち / 情報が古いため表示できません')
-            else
+            else ...[
+              const Text('行をタップすると方向名を付けられます（この端末だけに保存）'),
               for (var i = 0; i < intersection.signals!.length; i++)
-                Text(
-                  '信号${i + 1}：${PicsIntersection.signalDescription(intersection.signals![i])}',
+                _signalRow(
+                  intersection.id,
+                  i + 1,
+                  PicsIntersection.signalDescription(intersection.signals![i]),
                 ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _signalRow(String id, int no, String state) {
+    final label = directions?.get(id, no);
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      title: Text('${label == null ? '信号$no' : '$label（信号$no）'}：$state'),
+      trailing: const Icon(Icons.edit, size: 18, semanticLabel: '方向名を編集'),
+      onTap: directions == null ? null : () => _editDirection(id, no, label),
+    );
+  }
+
+  Future<void> _editDirection(String id, int no, String? current) async {
+    var text = current ?? '';
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('信号$no の方向名'),
+        content: TextFormField(
+          initialValue: current,
+          autofocus: true,
+          maxLength: 20,
+          decoration: const InputDecoration(
+            hintText: '例：東西方向',
+            helperText: '空にすると番号だけの表示に戻ります',
+          ),
+          onChanged: (value) => text = value,
+          onFieldSubmitted: (value) => Navigator.pop(context, value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, text),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (result == null) return;
+    await directions!.set(id, no, result);
+    if (mounted) setState(() {});
   }
 }

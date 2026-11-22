@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pics/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('起動して PICS が出る', (t) async {
     await t.pumpWidget(const ProviderScope(child: App()));
     expect(find.text('PICS'), findsOneWidget);
@@ -102,6 +105,23 @@ void main() {
     await receive(signal);
     expect(find.text('信号1：青（残り値 7）'), findsOneWidget);
     expect(find.text('信号2：赤（残り値 6）'), findsOneWidget);
+
+    await t.tap(find.text('信号2：赤（残り値 6）'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextFormField), ' 東西方向 ');
+    await t.tap(find.text('保存'));
+    await t.pumpAndSettle();
+    expect(find.text('東西方向（信号2）：赤（残り値 6）'), findsOneWidget);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('direction/12345678/2'), '東西方向');
+
+    await t.tap(find.text('東西方向（信号2）：赤（残り値 6）'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextFormField), '');
+    await t.tap(find.text('保存'));
+    await t.pumpAndSettle();
+    expect(find.text('信号2：赤（残り値 6）'), findsOneWidget);
+    expect(prefs.getString('direction/12345678/2'), isNull);
     await t.pumpWidget(const SizedBox());
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
   });
