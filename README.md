@@ -24,4 +24,8 @@ Android では「検索開始」から周辺の PICS 対応交差点を受信す
 
 ## データの出典
 
-`zenkoku-kousaten.csv` は、警察庁「高度化PICS整備交差点」（[e-Gov データポータル](https://data.e-gov.go.jp/data/dataset/npa_20221124_0054/resource/6f7e83e1-be28-4030-961f-3b489c9f6ad8)）を利用している。
+`zenkoku-kousaten.csv` は、警察庁「高度化PICS整備交差点」（[e-Gov データポータル](https://data.e-gov.go.jp/data/dataset/npa_20221124_0054/resource/6f7e83e1-be28-4030-961f-3b489c9f6ad8)）を利用している。配布元のファイルは Shift_JIS（cp932）なので、文字コードを UTF-8 に変換して収録した。
+
+## ライセンス
+
+このリポジトリのコードと文書は MIT License（`LICENSE`）で公開する。ただし `zenkoku-kousaten.csv` は対象外で、警察庁のデータの利用条件に従う。第三者の著作物は `NOTICE` に記す。
