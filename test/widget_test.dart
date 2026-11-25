@@ -103,24 +103,27 @@ void main() {
       0,
     ];
     await receive(signal);
-    expect(find.text('信号1：青（残り値 7）'), findsOneWidget);
-    expect(find.text('信号2：赤（残り値 6）'), findsOneWidget);
+    // 信号行は方向名・状態・残り値を別々の表示に分けた。
+    expect(find.text('信号1'), findsOneWidget);
+    expect(find.text('残り値 7'), findsOneWidget);
+    expect(find.text('信号2'), findsOneWidget);
+    expect(find.text('残り値 6'), findsOneWidget);
 
-    await t.tap(find.text('信号2：赤（残り値 6）'));
+    await t.tap(find.text('信号2'));
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextFormField), ' 東西方向 ');
     await t.tap(find.text('保存'));
     await t.pumpAndSettle();
-    expect(find.text('東西方向（信号2）：赤（残り値 6）'), findsOneWidget);
+    expect(find.text('東西方向（信号2）'), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('direction/12345678/2'), '東西方向');
 
-    await t.tap(find.text('東西方向（信号2）：赤（残り値 6）'));
+    await t.tap(find.text('東西方向（信号2）'));
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextFormField), '');
     await t.tap(find.text('保存'));
     await t.pumpAndSettle();
-    expect(find.text('信号2：赤（残り値 6）'), findsOneWidget);
+    expect(find.text('信号2'), findsOneWidget);
     expect(prefs.getString('direction/12345678/2'), isNull);
     await t.pumpWidget(const SizedBox());
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);

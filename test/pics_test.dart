@@ -103,4 +103,27 @@ void main() {
     expect(decoder.add(packet(1, 1)..[2] = 3, -70, now), isFalse);
     expect(decoder.intersections, isEmpty);
   });
+
+  test('受信中の交差点は電波優先・GPS 補助・ヒステリシスで選ぶ', () {
+    PicsIntersection make(String id, int rssi, [double? lat, double? lon]) {
+      return PicsIntersection(id)
+        ..rssi = rssi
+        ..latitude = lat
+        ..longitude = lon;
+    }
+
+    final strong = make('A', -55);
+    final weak = make('B', -80);
+    // GPS なし：電波が明らかに強い方を選ぶ。
+    expect(chooseIntersection([weak, strong]), 'A');
+    // ヒステリシス：今 B を選んでいて、A が僅差（マージン内）なら B を維持。
+    final near = make('A', -74);
+    expect(chooseIntersection([near, weak], currentId: 'B'), 'B');
+    // マージンを超えて強ければ切り替える。
+    expect(chooseIntersection([strong, weak], currentId: 'B'), 'A');
+    // 電波が拮抗するときは GPS で近い方を選ぶ（C が 0 m、D が約 111 m）。
+    final c = make('C', -70, 34.600, 135.500);
+    final d = make('D', -72, 34.601, 135.500);
+    expect(chooseIntersection([d, c], hereLat: 34.600, hereLon: 135.500), 'C');
+  });
 }
